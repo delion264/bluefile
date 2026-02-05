@@ -9,7 +9,12 @@ homepage = "https://github.com/spectriclabs/bluefile"
 repository = "https://github.com/spectriclabs/bluefile"
 
 [dependencies]
+deku = "0.20.3"
 num = "0.4"
+num-traits = "0.2.19"
+rkyv = { version = "0.8.14" }
+serde = { version = "1.0.228", features = ["derive", "serde_derive"] }
+serde_bytes = "0.11.19"
 
 [lib]
 name = "bluefile"
