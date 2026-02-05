@@ -44,11 +44,9 @@ pub struct DataType {
 
 #[derive(Debug, PartialEq, DekuRead)]
 #[deku(endian = "little")]
-pub struct MainHeader {
+pub struct CommonHeader {
     #[deku(
-        // 1. Read exactly 4 bytes from the stream
         count = "4",
-        // 2. Map the Vec<u8> result into a Vec<char>
         map = "|bytes: Vec<u8>| -> Result<Vec<char>, DekuError> {
             Ok(bytes.iter().map(|&b| b as char).collect())
         }"
@@ -56,9 +54,7 @@ pub struct MainHeader {
     pub is_blue: Vec<char>, // 0 - 4 [char]
 
     #[deku(
-        // 1. Read exactly 4 bytes from the stream
         count = "4",
-        // 2. Map the Vec<u8> result into a Vec<char>
         map = "|bytes: Vec<u8>| -> Result<Vec<char>, DekuError> {
             Ok(bytes.iter().map(|&b| b as char).collect())
         }"
@@ -83,23 +79,7 @@ pub struct MainHeader {
     pub data_start: f64, // 32 - 40
     pub data_size: f64,  // 40 - 48
     pub type_code: i32,  // 48 - 52
-
-    // #[deku(
-    //     count = "2",
-    //     map = "|bytes: Vec<u8>| -> Result<DataType, DekuError> {
-    //         Ok(bytes.iter().map(|&b| b as char).collect())
-    //     }"
-    // )]
     pub data_type: DataType,
-    // // Read a single byte, then convert it to a char
-    // #[deku(map = "|b: u8| -> Result<char, DekuError> { Ok(b as char) }")]
-    // // #[deku(writer = "|c: char| -> Result<u8, DekuError> { Ok(c as u8) }")]
-    // pub data_type_rank: char, // 52 - 54 [char]
-
-    // // Read a single byte, then convert it to a char
-    // #[deku(map = "|b: u8| -> Result<char, DekuError> { Ok(b as char) }")]
-    // // #[deku(writer = "|c: char| -> Result<u8, DekuError> { Ok(c as u8) }")]
-    // pub data_type_format: char,
     pub flagmask: i16,  // 54 - 56
     pub timecode: i64,  // 56 - 64
     pub inlet: i16,     // 64 - 66
@@ -108,23 +88,40 @@ pub struct MainHeader {
     pub pipeloc: i32,   // 72 - 76
     pub pipesize: i32,  // 76 - 80
     pub in_byte: i64,   // 80 - 88
-    pub out_byte: i64,  // 88 -96
+    pub out_byte: i64,  // 88 - 96
     pub out_bytes: i64, // 96 - 160
-    pub keylength: i32, // 160 - 164
-    pub keywords: [u8; 92], // 164 - 256 [char]
-                        // adjunct: [u8; 256],     // 256 - 512 [char]
-                        // data: Vec<u8>,
+
+    // TODO: Implement variable count based on size of extended header
+    #[deku(count = "3")]
+    pub keywords: Vec<ExtHeaderKeyword>,
+    // adjunct: [u8; 256],     // 256 - 512 [char]
+    // data: Vec<u8>,
 }
 
-pub struct ExtHeader {
-    ext_header: Vec<ExtHeaderKeyword>,
-}
-
-/// TODO: Verify this structure
-/// Extended header keyword.
+/// TODO: Verify the accuracy of this struct layout
+#[derive(Debug, PartialEq, DekuRead)]
+#[deku(endian = "little")]
+#[deku(ctx = "endian: deku::ctx::Endian")]
 pub struct ExtHeaderKeyword {
-    pub length: i32,
-    pub tag: Vec<u8>,
+    pub length: usize,
+
+    #[deku(map = "|field: i16| -> Result<usize, DekuError> { Ok(field as usize) }")]
+    pub keyword_hdr_length: usize,
+    pub tag_length: usize,
+
+    #[deku(map = "|b: u8| -> Result<char, DekuError> { Ok(b as char) }")]
+    pub format: char,
+
+    #[deku(
+        count = "tag_length",
+        map = "|bytes: Vec<u8>| -> Result<Vec<char>, DekuError> {
+            Ok(bytes.iter().map(|&b| b as char).collect())
+        }"
+    )]
+    pub tag: Vec<char>,
+
+    #[deku(ctx = "*count as usize, deku::ctx::Endian::Little")]
+    #[deku(count = "length - keyword_hdr_length")]
     pub value: Vec<u8>,
 }
 

@@ -3,7 +3,7 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 
 // use bluefile::parse_data::ParseData;
-use bluefile::types::MainHeader;
+use bluefile::types::CommonHeader;
 use deku::DekuContainerRead;
 
 const COMMON_HEADER_OFFSET: usize = 0; // in bytes
@@ -31,8 +31,8 @@ fn main() {
     }
 
     let (_residual, value) =
-        MainHeader::from_bytes((&header_data.as_ref(), 0)).expect("Something went wrong");
-    println!("{:?}", value);
+        CommonHeader::from_bytes((&header_data.as_ref(), 0)).expect("Something went wrong");
+    println!("{:#?}", value);
     // let header = read_header(&file).unwrap();
     // TODO: switch statements for parsing data according to data type
     // let parsed_data = <Complex<f32>>::parse_data(&file, &header).unwrap();
