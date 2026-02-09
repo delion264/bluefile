@@ -3,8 +3,10 @@ use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
 
 // use bluefile::parse_data::ParseData;
-use bluefile::types::CommonHeader;
-use deku::DekuContainerRead;
+use bluefile::types::{CommonHeader, Data};
+use deku::ctx::Endian;
+use deku::reader::Reader;
+use deku::{DekuContainerRead, DekuReader};
 
 const COMMON_HEADER_OFFSET: usize = 0; // in bytes
 const COMMON_HEADER_SIZE: usize = 256; // in bytes
@@ -13,14 +15,17 @@ fn main() {
     let mut d = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     d.push("resources/test/pulse_cx.tmp");
     let mut file = File::open(&d).unwrap();
-    let mut header_data: Vec<u8> = vec![0_u8; COMMON_HEADER_SIZE];
+    // let mut header_data: Vec<u8> = vec![0_u8; COMMON_HEADER_SIZE];
+    let mut header_data: Vec<u8> = vec![0_u8; COMMON_HEADER_SIZE * 2];
 
+    // Seek to header
     match file.seek(SeekFrom::Start(COMMON_HEADER_OFFSET as u64)) {
         Ok(x) => x,
         // Err(_) => Err(BlueError::HeaderSeekError),
         Err(_) => return,
     };
 
+    // Read header
     let n = match file.read(&mut header_data) {
         Ok(x) => x,
         // Err(_) => return Err(BlueError::FileReadError),
@@ -30,9 +35,12 @@ fn main() {
         return;
     }
 
+    // Deserialize common header + adjunct header
     let (_residual, value) =
         CommonHeader::from_bytes((&header_data.as_ref(), 0)).expect("Something went wrong");
     println!("{:#?}", value);
+    // println!("{:#?}", value.data.len());
+
     // let header = read_header(&file).unwrap();
     // TODO: switch statements for parsing data according to data type
     // let parsed_data = <Complex<f32>>::parse_data(&file, &header).unwrap();

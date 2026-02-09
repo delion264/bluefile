@@ -15,6 +15,7 @@ num-traits = "0.2.19"
 rkyv = { version = "0.8.14" }
 serde = { version = "1.0.228", features = ["derive", "serde_derive"] }
 serde_bytes = "0.11.19"
+zerocopy = { version = "0.8.39", features = ["derive"] }
 
 [lib]
 name = "bluefile"
